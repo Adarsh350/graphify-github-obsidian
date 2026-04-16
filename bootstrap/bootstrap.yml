@@ -1,0 +1,65 @@
+name: Bootstrap Graphify on Personal Repos
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'workflows/graphify.yml'
+      - 'workflows/graphify_master.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GRAPHIFY_PAT }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Add graphify workflow to all repos (personal + org)
+        run: |
+          WORKFLOW_MAIN=$(base64 -w 0 < workflows/graphify.yml)
+          WORKFLOW_MASTER=$(base64 -w 0 < workflows/graphify_master.yml)
+
+          install_graphify() {
+            local org="$1"
+            local repo="$2"
+            if [ "$repo" = "personal-automation" ]; then return; fi
+            branch=$(gh api "repos/$org/$repo" --jq '.default_branch' 2>/dev/null)
+            if gh api "repos/$org/$repo/contents/.github/workflows/graphify.yml" --silent 2>/dev/null; then
+              echo "[$org/$repo] already has graphify - skipping"
+              return
+            fi
+            if [ "$branch" = "master" ]; then CONTENT="$WORKFLOW_MASTER"; else CONTENT="$WORKFLOW_MAIN"; fi
+            echo "[$org/$repo] Adding graphify workflow (branch: $branch)..."
+            if gh api "repos/$org/$repo/contents/.github/workflows/graphify.yml" \
+              --method PUT \
+              --field message="chore: add graphify knowledge graph [automated]" \
+              --field content="$CONTENT" --silent; then
+              echo "[$org/$repo] Workflow added - triggering first build..."
+              sleep 5
+              gh workflow run graphify.yml --repo "$org/$repo" 2>/dev/null \
+                && echo "[$org/$repo] First build triggered" \
+                || echo "[$org/$repo] Will run on next push"
+            else
+              echo "[$org/$repo] Failed"
+            fi
+          }
+
+          YOUR_USERNAME="Adarsh350"
+          YOUR_ORG="iyara-labs"
+
+          echo "=== Processing $YOUR_USERNAME personal repos ==="
+          for repo in $(gh repo list "$YOUR_USERNAME" --limit 100 --json name --jq '.[].name'); do
+            install_graphify "$YOUR_USERNAME" "$repo"
+          done
+
+          echo "=== Processing $YOUR_ORG org repos ==="
+          for repo in $(gh repo list "$YOUR_ORG" --limit 100 --json name --jq '.[].name'); do
+            install_graphify "$YOUR_ORG" "$repo"
+          done
