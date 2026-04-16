@@ -1,0 +1,61 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "update-graphify-obsidian.ps1",
+      "file_type": "code",
+      "source_file": "obsidian-sync/update-graphify-obsidian.ps1",
+      "source_location": "L1",
+      "id": "obsidian_sync_update_graphify_obsidian_ps1",
+      "community": 0,
+      "norm_label": "update-graphify-obsidian.ps1"
+    },
+    {
+      "label": "Log()",
+      "file_type": "code",
+      "source_file": "obsidian-sync/update-graphify-obsidian.ps1",
+      "source_location": "L8",
+      "id": "update_graphify_obsidian_log",
+      "community": 0,
+      "norm_label": "log()"
+    },
+    {
+      "label": "WikiLink()",
+      "file_type": "code",
+      "source_file": "obsidian-sync/update-graphify-obsidian.ps1",
+      "source_location": "L15",
+      "id": "update_graphify_obsidian_wikilink",
+      "community": 0,
+      "norm_label": "wikilink()"
+    }
+  ],
+  "links": [
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "obsidian-sync/update-graphify-obsidian.ps1",
+      "source_location": "L8",
+      "weight": 1.0,
+      "_src": "obsidian_sync_update_graphify_obsidian_ps1",
+      "_tgt": "update_graphify_obsidian_log",
+      "source": "obsidian_sync_update_graphify_obsidian_ps1",
+      "target": "update_graphify_obsidian_log",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "obsidian-sync/update-graphify-obsidian.ps1",
+      "source_location": "L15",
+      "weight": 1.0,
+      "_src": "obsidian_sync_update_graphify_obsidian_ps1",
+      "_tgt": "update_graphify_obsidian_wikilink",
+      "source": "obsidian_sync_update_graphify_obsidian_ps1",
+      "target": "update_graphify_obsidian_wikilink",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": []
+}
