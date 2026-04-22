@@ -29,6 +29,7 @@ $REPOS = @(
     "Adarsh350/iyaralabs-website-v3|main|iyaralabs-website-v3",
     "Adarsh350/claude-config|main|claude-config",
     "Adarsh350/deepgamecoaching-site|main|deepgamecoaching-site",
+    "Adarsh350/adarsh-portfolio|main|adarsh-portfolio",
     "iyara-labs/iyaralabs-website-next|main|iyaralabs-website-next",
     "iyara-labs/org-automation|main|org-automation",
     "iyara-labs/iyaralabs-website-v2|main|iyaralabs-website-v2",
@@ -58,14 +59,14 @@ foreach ($entry in $REPOS) {
     $backLink = WikiLink("Graphify Index|Back to Index")
 
     $linkLine = "- [" + $name + " graph](" + $ghUrl + ")"
-    if ($repoIndex -lt 10) { [void]$personalLinks.Add($linkLine) } else { [void]$iyaraLinks.Add($linkLine) }
+    if ($repoIndex -lt 11) { [void]$personalLinks.Add($linkLine) } else { [void]$iyaraLinks.Add($linkLine) }
 
     $reportJson = gh api "repos/$repo/contents/graphify-out/GRAPH_REPORT.md" 2>$null
     if (-not $reportJson) {
         Log "  SKIP  $repo  (no graphify-out yet)"
         $skipped++
         $row = "| " + $wikiLink + " | - | - | - | pending |"
-        if ($repoIndex -lt 10) { [void]$personalRows.Add($row) } else { [void]$iyaraRows.Add($row) }
+        if ($repoIndex -lt 11) { [void]$personalRows.Add($row) } else { [void]$iyaraRows.Add($row) }
         $repoIndex++
         continue
     }
@@ -109,12 +110,12 @@ foreach ($entry in $REPOS) {
         Log ("  OK    " + $repo + "  (" + $nodes + " nodes, " + $edges + " edges)")
         $updated++
         $row = "| " + $wikiLink + " | " + $nodes + " | " + $edges + " | " + $comms + " | " + $files + " |"
-        if ($repoIndex -lt 10) { [void]$personalRows.Add($row) } else { [void]$iyaraRows.Add($row) }
+        if ($repoIndex -lt 11) { [void]$personalRows.Add($row) } else { [void]$iyaraRows.Add($row) }
     } catch {
         Log ("  ERROR " + $repo + "  " + $_)
         $failed++
         $row = "| " + $wikiLink + " | error | - | - | - |"
-        if ($repoIndex -lt 10) { [void]$personalRows.Add($row) } else { [void]$iyaraRows.Add($row) }
+        if ($repoIndex -lt 11) { [void]$personalRows.Add($row) } else { [void]$iyaraRows.Add($row) }
     }
 
     $repoIndex++
