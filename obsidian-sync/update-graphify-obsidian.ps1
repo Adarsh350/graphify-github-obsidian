@@ -1,12 +1,14 @@
-# update-graphify-obsidian.ps1
+﻿# update-graphify-obsidian.ps1
 # Fetches latest graphify GRAPH_REPORT.md from all repos and updates Obsidian vault.
 # Runs daily via Windows Task Scheduler.
+# Repos are discovered dynamically - no hardcoded list needed.
 
-$VAULT = "C:\Users\JobSearch\Documents\Obsidian Vault\Graphify"
-$LOG   = "C:\Users\JobSearch\.claude\scripts\graphify-obsidian.log"
+$VAULT      = "C:\Users\JobSearch\Documents\Obsidian Vault\Graphify"
+$LOG        = "C:\Users\JobSearch\.claude\scripts\graphify-obsidian.log"
+$SKIP_REPOS = @("graphify-github-obsidian", "personal-automation")
 
 function Log($msg) {
-    $ts = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $ts   = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     $line = "$ts  $msg"
     Write-Host $line
     Add-Content -Path $LOG -Value $line
@@ -17,26 +19,27 @@ function WikiLink($label) { return "[[" + $label + "]]" }
 Log "=== Graphify Obsidian sync started ==="
 New-Item -ItemType Directory -Force -Path $VAULT | Out-Null
 
-# Format: "org/repo|branch|display_name"
-$REPOS = @(
-    "Adarsh350/Jobfill-Extension|main|Jobfill-Extension",
-    "Adarsh350/mailchimp-reports-worker|main|mailchimp-reports-worker",
-    "Adarsh350/mailchimp-bounce-monitor-worker|main|mailchimp-bounce-monitor-worker",
-    "Adarsh350/chess-app|main|chess-app",
-    "Adarsh350/trussme-email-dashboard|master|trussme-email-dashboard",
-    "Adarsh350/live-email-dashboard|master|live-email-dashboard",
-    "Adarsh350/iyara-labs-dashboard|master|iyara-labs-dashboard",
-    "Adarsh350/iyaralabs-website-v3|main|iyaralabs-website-v3",
-    "Adarsh350/claude-config|main|claude-config",
-    "Adarsh350/deepgamecoaching-site|main|deepgamecoaching-site",
-    "Adarsh350/adarsh-portfolio|main|adarsh-portfolio",
-    "iyara-labs/iyaralabs-website-next|main|iyaralabs-website-next",
-    "iyara-labs/org-automation|main|org-automation",
-    "iyara-labs/iyaralabs-website-v2|main|iyaralabs-website-v2",
-    "iyara-labs/portfolio-boilerplate|main|portfolio-boilerplate",
-    "iyara-labs/petronet-website|main|petronet-website",
-    "iyara-labs/iyaralabs-website-v1|main|iyaralabs-website-v1"
-)
+# Discover all repos from both orgs
+Log "Discovering repos from Adarsh350 and iyara-labs..."
+$personalJson = gh repo list Adarsh350  --limit 100 --json name,defaultBranchRef 2>$null | ConvertFrom-Json
+$iyaraJson    = gh repo list iyara-labs --limit 100 --json name,defaultBranchRef 2>$null | ConvertFrom-Json
+
+# Build unified list: @{ repo; branch; name; org }
+$allRepos = [System.Collections.ArrayList]::new()
+foreach ($r in $personalJson) {
+    if ($SKIP_REPOS -notcontains $r.name) {
+        $branch = if ($r.defaultBranchRef -and $r.defaultBranchRef.name) { $r.defaultBranchRef.name } else { "main" }
+        [void]$allRepos.Add([PSCustomObject]@{ repo = "Adarsh350/$($r.name)"; branch = $branch; name = $r.name; org = "personal" })
+    }
+}
+foreach ($r in $iyaraJson) {
+    if ($SKIP_REPOS -notcontains $r.name) {
+        $branch = if ($r.defaultBranchRef -and $r.defaultBranchRef.name) { $r.defaultBranchRef.name } else { "main" }
+        [void]$allRepos.Add([PSCustomObject]@{ repo = "iyara-labs/$($r.name)"; branch = $branch; name = $r.name; org = "iyara" })
+    }
+}
+
+Log ("Found " + $allRepos.Count + " repos to check (" + $personalJson.Count + " personal, " + $iyaraJson.Count + " iyara-labs)")
 
 $updated       = 0
 $skipped       = 0
@@ -46,28 +49,26 @@ $personalRows  = [System.Collections.ArrayList]::new()
 $iyaraRows     = [System.Collections.ArrayList]::new()
 $personalLinks = [System.Collections.ArrayList]::new()
 $iyaraLinks    = [System.Collections.ArrayList]::new()
-$repoIndex     = 0
+$backLink      = WikiLink("Graphify Index|Back to Index")
 
-foreach ($entry in $REPOS) {
-    $parts   = $entry -split "\|"
-    $repo    = $parts[0]
-    $branch  = $parts[1]
-    $name    = $parts[2]
-    $ghUrl   = "https://github.com/" + $repo + "/blob/" + $branch + "/graphify-out/GRAPH_REPORT.md"
-    $repoUrl = "https://github.com/" + $repo
+foreach ($entry in $allRepos) {
+    $repo    = $entry.repo
+    $branch  = $entry.branch
+    $name    = $entry.name
+    $org     = $entry.org
+    $ghUrl   = "https://github.com/$repo/blob/$branch/graphify-out/GRAPH_REPORT.md"
+    $repoUrl = "https://github.com/$repo"
     $wikiLink = WikiLink($name)
-    $backLink = WikiLink("Graphify Index|Back to Index")
+    $linkLine = "- [$name graph]($ghUrl)"
 
-    $linkLine = "- [" + $name + " graph](" + $ghUrl + ")"
-    if ($repoIndex -lt 11) { [void]$personalLinks.Add($linkLine) } else { [void]$iyaraLinks.Add($linkLine) }
+    if ($org -eq "personal") { [void]$personalLinks.Add($linkLine) } else { [void]$iyaraLinks.Add($linkLine) }
 
     $reportJson = gh api "repos/$repo/contents/graphify-out/GRAPH_REPORT.md" 2>$null
     if (-not $reportJson) {
-        Log "  SKIP  $repo  (no graphify-out yet)"
+        Log "  SKIP  $repo  (no graphify-out yet - bootstrap will add it on next cycle)"
         $skipped++
-        $row = "| " + $wikiLink + " | - | - | - | pending |"
-        if ($repoIndex -lt 11) { [void]$personalRows.Add($row) } else { [void]$iyaraRows.Add($row) }
-        $repoIndex++
+        $row = "| $wikiLink | - | - | - | pending |"
+        if ($org -eq "personal") { [void]$personalRows.Add($row) } else { [void]$iyaraRows.Add($row) }
         continue
     }
 
@@ -75,9 +76,9 @@ foreach ($entry in $REPOS) {
         $jsonObj = $reportJson | ConvertFrom-Json
         $decoded = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($jsonObj.content))
 
-        # Strip _COMMUNITY_ wikilinks — they create phantom ghost nodes in Obsidian graph view
+        # Strip _COMMUNITY_ wikilinks - they create phantom ghost nodes in Obsidian graph view
         $decoded = $decoded -replace '\[\[_COMMUNITY_[^\]]+\]\]', ''
-        # Also remove the now-empty "Community Hubs (Navigation)" section entirely
+        # Remove now-empty Community Hubs section
         $decoded = $decoded -replace '(?ms)## Community Hubs \(Navigation\).*?(?=\n## |\Z)', ''
 
         $nodes = if ($decoded -match '(\d+) nodes')       { $Matches[1] } else { "?" }
@@ -85,7 +86,7 @@ foreach ($entry in $REPOS) {
         $comms = if ($decoded -match '(\d+) communities') { $Matches[1] } else { "?" }
         $files = if ($decoded -match '(\d+) files')       { $Matches[1] } else { "?" }
 
-        $noteLines = @(
+        $noteContent = @(
             "# $name - Knowledge Graph",
             "",
             "**Repo:** [$repo]($repoUrl)",
@@ -101,42 +102,40 @@ foreach ($entry in $REPOS) {
             "",
             $decoded,
             "",
-            "<- " + $backLink
-        )
+            "<- $backLink"
+        ) -join "`n"
 
         $outFile = Join-Path $VAULT ($name + ".md")
-        Set-Content -Path $outFile -Value ($noteLines -join "`n") -Encoding UTF8
+        [System.IO.File]::WriteAllText($outFile, $noteContent, [System.Text.Encoding]::UTF8)
 
-        Log ("  OK    " + $repo + "  (" + $nodes + " nodes, " + $edges + " edges)")
+        Log ("  OK    $repo  ($nodes nodes, $edges edges)")
         $updated++
-        $row = "| " + $wikiLink + " | " + $nodes + " | " + $edges + " | " + $comms + " | " + $files + " |"
-        if ($repoIndex -lt 11) { [void]$personalRows.Add($row) } else { [void]$iyaraRows.Add($row) }
+        $row = "| $wikiLink | $nodes | $edges | $comms | $files |"
+        if ($org -eq "personal") { [void]$personalRows.Add($row) } else { [void]$iyaraRows.Add($row) }
     } catch {
-        Log ("  ERROR " + $repo + "  " + $_)
+        Log ("  ERROR $repo  $_")
         $failed++
-        $row = "| " + $wikiLink + " | error | - | - | - |"
-        if ($repoIndex -lt 11) { [void]$personalRows.Add($row) } else { [void]$iyaraRows.Add($row) }
+        $row = "| $wikiLink | error | - | - | - |"
+        if ($org -eq "personal") { [void]$personalRows.Add($row) } else { [void]$iyaraRows.Add($row) }
     }
-
-    $repoIndex++
 }
 
 # Rebuild master index
-$syncTime = Get-Date -Format "yyyy-MM-dd HH:mm"
-$indexLines = @(
+$syncTime   = Get-Date -Format "yyyy-MM-dd HH:mm"
+$indexContent = @(
     "# Graphify - Knowledge Graph Index",
     "",
     "> Auto-synced from GitHub. Last updated: $syncTime",
-    "> New repos detected automatically every 30 min by personal-automation.",
+    "> Repos are discovered automatically - new repos appear here once graphify bootstrap runs.",
     "",
     "---",
     "",
     "## How It Works",
     "",
-    "- Every push to ``main`` / ``master`` triggers the graphify GitHub Action",
-    "- Extracts AST knowledge graph from all code files",
-    "- Commits ``graphify-out/GRAPH_REPORT.md`` + ``graph.json`` back to repo",
+    "- bootstrap.yml runs every 30 min and installs the graphify workflow on any new repo",
+    "- Every push to ``main`` / ``master`` re-extracts the knowledge graph",
     "- This index auto-updates daily at 8am via Windows Task Scheduler",
+    "- **No manual config needed** - new repos appear automatically",
     "",
     "---",
     "",
@@ -161,10 +160,10 @@ $indexLines = @(
     "",
     "### iyara-labs",
     ($iyaraLinks -join "`n")
-)
+) -join "`n"
 
 $indexFile = Join-Path $VAULT "Graphify Index.md"
-Set-Content -Path $indexFile -Value ($indexLines -join "`n") -Encoding UTF8
+[System.IO.File]::WriteAllText($indexFile, $indexContent, [System.Text.Encoding]::UTF8)
 
 Log "Index rebuilt."
-Log ("=== Done: " + $updated + " updated, " + $skipped + " skipped, " + $failed + " failed ===")
+Log ("=== Done: $updated updated, $skipped skipped (no graphify yet), $failed failed ===")
