@@ -6,17 +6,19 @@
     {
       "label": "update-graphify-obsidian.ps1",
       "file_type": "code",
-      "source_file": "/home/runner/work/graphify-github-obsidian/graphify-github-obsidian/obsidian-sync/update-graphify-obsidian.ps1",
+      "source_file": "update-graphify-obsidian.ps1",
       "source_location": "L1",
-      "id": "update_graphify_obsidian_ps1",
+      "_origin": "ast",
+      "id": "update_graphify_obsidian",
       "community": 0,
       "norm_label": "update-graphify-obsidian.ps1"
     },
     {
       "label": "Log()",
       "file_type": "code",
-      "source_file": "/home/runner/work/graphify-github-obsidian/graphify-github-obsidian/obsidian-sync/update-graphify-obsidian.ps1",
+      "source_file": "update-graphify-obsidian.ps1",
       "source_location": "L10",
+      "_origin": "ast",
       "id": "update_graphify_obsidian_log",
       "community": 0,
       "norm_label": "log()"
@@ -24,8 +26,9 @@
     {
       "label": "WikiLink()",
       "file_type": "code",
-      "source_file": "/home/runner/work/graphify-github-obsidian/graphify-github-obsidian/obsidian-sync/update-graphify-obsidian.ps1",
+      "source_file": "update-graphify-obsidian.ps1",
       "source_location": "L17",
+      "_origin": "ast",
       "id": "update_graphify_obsidian_wikilink",
       "community": 0,
       "norm_label": "wikilink()"
@@ -35,27 +38,26 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
-      "source_file": "/home/runner/work/graphify-github-obsidian/graphify-github-obsidian/obsidian-sync/update-graphify-obsidian.ps1",
+      "source_file": "update-graphify-obsidian.ps1",
       "source_location": "L10",
       "weight": 1.0,
-      "_src": "update_graphify_obsidian_ps1",
-      "_tgt": "update_graphify_obsidian_log",
-      "source": "update_graphify_obsidian_ps1",
+      "_origin": "ast",
+      "source": "update_graphify_obsidian",
       "target": "update_graphify_obsidian_log",
       "confidence_score": 1.0
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
-      "source_file": "/home/runner/work/graphify-github-obsidian/graphify-github-obsidian/obsidian-sync/update-graphify-obsidian.ps1",
+      "source_file": "update-graphify-obsidian.ps1",
       "source_location": "L17",
       "weight": 1.0,
-      "_src": "update_graphify_obsidian_ps1",
-      "_tgt": "update_graphify_obsidian_wikilink",
-      "source": "update_graphify_obsidian_ps1",
+      "_origin": "ast",
+      "source": "update_graphify_obsidian",
       "target": "update_graphify_obsidian_wikilink",
       "confidence_score": 1.0
     }
   ],
-  "hyperedges": []
+  "hyperedges": [],
+  "built_at_commit": "4ad8dd41aa2f5f2fd6e026e964480f19477bd616"
 }

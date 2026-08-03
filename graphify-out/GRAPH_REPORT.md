@@ -1,11 +1,11 @@
-# Graph Report - .  (2026-04-23)
+# Graph Report - .  (2026-08-03)
 
 ## Corpus Check
-- 4 files · ~1,849 words
+- 7 files · ~2,775 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 3 nodes · 2 edges · 0 communities detected
+- 3 nodes · 2 edges · 1 communities
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
@@ -14,7 +14,10 @@
 ## Surprising Connections (you probably didn't know these)
 - None detected - all connections are within the same source files.
 
-## Communities
+## Import Cycles
+- None detected.
+
+## Communities (1 total, 0 thin omitted)
 
 ## Suggested Questions
 _Not enough signal to generate questions. This usually means the corpus has no AMBIGUOUS edges, no bridge nodes, no INFERRED relationships, and all communities are tightly cohesive. Add more files or run with --mode deep to extract richer edges._
